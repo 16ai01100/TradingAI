@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+scikit-learn
+joblib
+stable-baselines3
+gym
+dash
+plotly
+streamlit
+pandas
+numpy
+cryptography
+python-dotenv
