@@ -1,0 +1,75 @@
+---
+configure_data_environment:
+  description: Initialize the trading platform environment by setting up connections
+    to Binance. Utilize {api_key} and {api_secret} to authenticate and configure data
+    streams for the market data of {crypto_pairs}. Store data in the designated structure
+    for access by downstream modules.
+  expected_output: A fully initialized and stable data collection environment with
+    real-time and historical data streams correctly stored and accessible.
+  async_execution: false
+  agent: data_collector
+develop_trading_strategies:
+  description: Develop and implement trading strategies (e.g., moving average crossovers,
+    RSI indicators) with adjustable parameters provided in {strategy_parameters}.
+    Ensure the strategies can process data from {crypto_pairs} and send executable
+    orders to Binance using the API.
+  expected_output: A modular trading strategy codebase capable of live order execution
+    on Binance for the specified crypto pairs, integrated with adjustable parameter
+    configurations.
+  async_execution: false
+  agent: strategy_executor
+  context:
+  - configure_data_environment
+build_ml_module:
+  description: Design, implement and train deep learning models using {ml_framework}
+    (e.g., TensorFlow, PyTorch) on the historical and real-time datasets. Integrate
+    an auto-learning loop with feedback from {performance_metrics} to continuously
+    refine the model and strategy predictions.
+  expected_output: A robust machine learning module with trained models, capable of
+    predicting market movements and dynamically improving trading strategies based
+    on live performance data.
+  async_execution: false
+  agent: ml_developer
+  context:
+  - configure_data_environment
+perform_backtesting:
+  description: Utilize historical market data from {historical_data_source} to run
+    simulations of the trading strategies, evaluating performance across multiple
+    scenarios for the crypto pairs in {crypto_pairs}. Generate detailed reports on
+    profitability, risk management metrics, and strategy optimization suggestions.
+  expected_output: Generated backtesting reports including performance metrics, graphs,
+    and optimization recommendations for the trading strategies.
+  async_execution: false
+  agent: backtesting_engineer
+  context:
+  - configure_data_environment
+  - develop_trading_strategies
+design_web_interface:
+  description: Develop an interactive web dashboard using {web_framework} that displays
+    real-time trading data, backtesting results, and ML model insights. Integrate
+    controls for modifying trading parameters and initiating or halting live trades
+    on Binance.
+  expected_output: A responsive dashboard providing real-time visualization of market
+    data, trading performance, and ML insights, along with administrative controls
+    for the trading system.
+  async_execution: false
+  agent: web_interface_designer
+  context:
+  - develop_trading_strategies
+  - perform_backtesting
+  - build_ml_module
+integration_testing:
+  description: Integrate all modules (data collection, trading strategies, ML module,
+    backtesting, and web interface) and perform comprehensive system testing. Verify
+    the full workflow from data collection to live trading orders on Binance, ensuring
+    that all components work seamlessly together.
+  expected_output: A consolidated integration test report verifying the stability
+    and performance of the fully automated multi-pairs trading platform on Binance.
+  async_execution: false
+  agent: strategy_executor
+  context:
+  - configure_data_environment
+  - develop_trading_strategies
+  - build_ml_module
+  - perform_backtesting
+  - design_web_interface

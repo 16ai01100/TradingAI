@@ -1,0 +1,374 @@
+{% extends "base.html" %}
+
+{% block title %}Paramètres - Application de Trading{% endblock %}
+
+{% block extra_css %}
+<style>
+    .api-key-section {
+        margin-bottom: 30px;
+    }
+    .settings-card {
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <h1 class="h2 mb-4">Paramètres de l'application</h1>
+
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card settings-card">
+                <div class="card-header">
+                    <h5 class="mb-0">Connexion à l'API Binance</h5>
+                </div>
+                <div class="card-body">
+                    <form id="api-settings-form">
+                        <div class="api-key-section">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="api-key" class="form-label">Clé API</label>
+                                    <div class="input-group">
+                                        <input type="password" id="api-key" class="form-control" placeholder="Entrez votre clé API Binance">
+                                        <button class="btn btn-outline-secondary" type="button" id="toggle-api-key">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="api-secret" class="form-label">Secret API</label>
+                                    <div class="input-group">
+                                        <input type="password" id="api-secret" class="form-control" placeholder="Entrez votre secret API Binance">
+                                        <button class="btn btn-outline-secondary" type="button" id="toggle-api-secret">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-text mb-3">
+                                <i class="bi bi-info-circle"></i> Vos clés API sont stockées localement et ne sont jamais partagées. Assurez-vous de limiter les permissions de vos clés API à la lecture seule si vous ne souhaitez pas exécuter des ordres automatiquement.
+                            </div>
+                            <button type="button" id="test-api-connection" class="btn btn-outline-primary">
+                                <i class="bi bi-check-circle"></i> Tester la connexion
+                            </button>
+                        </div>
+                        <div class="mt-4">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i> Enregistrer les paramètres API
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card settings-card">
+                <div class="card-header">
+                    <h5 class="mb-0">Préférences générales</h5>
+                </div>
+                <div class="card-body">
+                    <form id="general-settings-form">
+                        <div class="mb-3">
+                            <label for="default-crypto-pairs" class="form-label">Paires de crypto-monnaies par défaut</label>
+                            <select id="default-crypto-pairs" class="form-select" multiple>
+                                <option value="BTCUSDT">BTC/USDT</option>
+                                <option value="ETHUSDT">ETH/USDT</option>
+                                <option value="BNBUSDT">BNB/USDT</option>
+                                <option value="ADAUSDT">ADA/USDT</option>
+                                <option value="DOGEUSDT">DOGE/USDT</option>
+                                <option value="XRPUSDT">XRP/USDT</option>
+                                <option value="DOTUSDT">DOT/USDT</option>
+                                <option value="LTCUSDT">LTC/USDT</option>
+                            </select>
+                            <div class="form-text">Maintenez la touche Ctrl enfoncée pour sélectionner plusieurs paires.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="default-timeframe" class="form-label">Intervalle de temps par défaut</label>
+                            <select id="default-timeframe" class="form-select">
+                                <option value="1m">1 minute</option>
+                                <option value="5m">5 minutes</option>
+                                <option value="15m">15 minutes</option>
+                                <option value="30m">30 minutes</option>
+                                <option value="1h" selected>1 heure</option>
+                                <option value="4h">4 heures</option>
+                                <option value="1d">1 jour</option>
+                                <option value="1w">1 semaine</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="theme-select" class="form-label">Thème de l'interface</label>
+                            <select id="theme-select" class="form-select">
+                                <option value="light">Clair</option>
+                                <option value="dark">Sombre</option>
+                                <option value="system">Système</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="real-time-updates" checked>
+                                <label class="form-check-label" for="real-time-updates">Mises à jour en temps réel</label>
+                            </div>
+                            <div class="form-text">Activer les mises à jour automatiques des données de marché.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="update-interval" class="form-label">Intervalle de mise à jour (secondes)</label>
+                            <input type="number" id="update-interval" class="form-control" value="30" min="5" max="300">
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Enregistrer les préférences
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card settings-card">
+                <div class="card-header">
+                    <h5 class="mb-0">Paramètres de trading</h5>
+                </div>
+                <div class="card-body">
+                    <form id="trading-settings-form">
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="enable-live-trading">
+                                <label class="form-check-label" for="enable-live-trading">Activer le trading en direct</label>
+                            </div>
+                            <div class="form-text text-danger">Attention : Cette option permet l'exécution automatique des ordres sur votre compte Binance.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="default-position-size" class="form-label">Taille de position par défaut (%)</label>
+                            <input type="number" id="default-position-size" class="form-control" value="10" min="1" max="100">
+                            <div class="form-text">Pourcentage du capital à utiliser pour chaque transaction.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="max-open-positions" class="form-label">Nombre maximum de positions ouvertes</label>
+                            <input type="number" id="max-open-positions" class="form-control" value="5" min="1" max="20">
+                        </div>
+                        <div class="mb-3">
+                            <label for="default-stop-loss" class="form-label">Stop loss par défaut (%)</label>
+                            <input type="number" id="default-stop-loss" class="form-control" value="2" min="0.1" max="20" step="0.1">
+                        </div>
+                        <div class="mb-3">
+                            <label for="default-take-profit" class="form-label">Take profit par défaut (%)</label>
+                            <input type="number" id="default-take-profit" class="form-control" value="5" min="0.1" max="50" step="0.1">
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="enable-trailing-stop" checked>
+                                <label class="form-check-label" for="enable-trailing-stop">Activer le trailing stop</label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="trailing-stop-percent" class="form-label">Pourcentage de trailing stop (%)</label>
+                            <input type="number" id="trailing-stop-percent" class="form-control" value="1" min="0.1" max="10" step="0.1">
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Enregistrer les paramètres de trading
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card settings-card">
+                <div class="card-header">
+                    <h5 class="mb-0">Notifications</h5>
+                </div>
+                <div class="card-body">
+                    <form id="notifications-settings-form">
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="enable-email-notifications" checked>
+                                <label class="form-check-label" for="enable-email-notifications">Notifications par email</label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="email-address" class="form-label">Adresse email</label>
+                            <input type="email" id="email-address" class="form-control" placeholder="votre@email.com">
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="notify-new-trade" checked>
+                                <label class="form-check-label" for="notify-new-trade">Nouvelle transaction</label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="notify-stop-loss" checked>
+                                <label class="form-check-label" for="notify-stop-loss">Déclenchement de stop loss</label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="notify-take-profit" checked>
+                                <label class="form-check-label" for="notify-take-profit">Déclenchement de take profit</label>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="notify-price-alert" checked>
+                                <label class="form-check-label" for="notify-price-alert">Alertes de prix</label>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save"></i> Enregistrer les paramètres de notification
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de test de connexion API -->
+<div class="modal fade" id="api-test-modal" tabindex="-1" aria-labelledby="api-test-modal-label" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="api-test-modal-label">Test de connexion API</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="api-test-spinner" class="text-center">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Chargement...</span>
+                    </div>
+                    <p class="mt-2">Test de la connexion à l'API Binance...</p>
+                </div>
+                <div id="api-test-result" class="d-none">
+                    <!-- Le résultat du test sera affiché ici -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Gestionnaire pour afficher/masquer la clé API
+        document.getElementById('toggle-api-key').addEventListener('click', function() {
+            const apiKeyInput = document.getElementById('api-key');
+            const icon = this.querySelector('i');
+            
+            if (apiKeyInput.type === 'password') {
+                apiKeyInput.type = 'text';
+                icon.classList.remove('bi-eye');
+                icon.classList.add('bi-eye-slash');
+            } else {
+                apiKeyInput.type = 'password';
+                icon.classList.remove('bi-eye-slash');
+                icon.classList.add('bi-eye');
+            }
+        });
+        
+        // Gestionnaire pour afficher/masquer le secret API
+        document.getElementById('toggle-api-secret').addEventListener('click', function() {
+            const apiSecretInput = document.getElementById('api-secret');
+            const icon = this.querySelector('i');
+            
+            if (apiSecretInput.type === 'password') {
+                apiSecretInput.type = 'text';
+                icon.classList.remove('bi-eye');
+                icon.classList.add('bi-eye-slash');
+            } else {
+                apiSecretInput.type = 'password';
+                icon.classList.remove('bi-eye-slash');
+                icon.classList.add('bi-eye');
+            }
+        });
+        
+        // Gestionnaire pour le test de connexion API
+        document.getElementById('test-api-connection').addEventListener('click', function() {
+            const apiKey = document.getElementById('api-key').value;
+            const apiSecret = document.getElementById('api-secret').value;
+            
+            if (!apiKey || !apiSecret) {
+                alert('Veuillez entrer une clé API et un secret API.');
+                return;
+            }
+            
+            // Afficher le modal de test
+            const modal = new bootstrap.Modal(document.getElementById('api-test-modal'));
+            modal.show();
+            
+            // Réinitialiser l'affichage
+            document.getElementById('api-test-spinner').classList.remove('d-none');
+            document.getElementById('api-test-result').classList.add('d-none');
+            
+            // Simuler un appel API (à remplacer par un vrai appel)
+            setTimeout(() => {
+                document.getElementById('api-test-spinner').classList.add('d-none');
+                document.getElementById('api-test-result').classList.remove('d-none');
+                
+                // Simuler un succès (à remplacer par la vérification réelle)
+                const isSuccess = Math.random() > 0.3; // 70% de chance de succès
+                
+                if (isSuccess) {
+                    document.getElementById('api-test-result').innerHTML = `
+                        <div class="alert alert-success">
+                            <i class="bi bi-check-circle-fill"></i> Connexion réussie à l'API Binance!
+                            <hr>
+                            <p class="mb-0">Compte: Binance</p>
+                            <p class="mb-0">Type: Spot</p>
+                            <p class="mb-0">Permissions: Lecture, Trading</p>
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('api-test-result').innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-triangle-fill"></i> Échec de la connexion à l'API Binance.
+                            <hr>
+                            <p class="mb-0">Erreur: Clé API ou secret invalide.</p>
+                            <p class="mb-0">Veuillez vérifier vos informations d'identification et réessayer.</p>
+                        </div>
+                    `;
+                }
+            }, 2000);
+        });
+        
+        // Gestionnaire pour le formulaire des paramètres API
+        document.getElementById('api-settings-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const apiKey = document.getElementById('api-key').value;
+            const apiSecret = document.getElementById('api-secret').value;
+            
+            // Simuler l'enregistrement des paramètres (à remplacer par un vrai appel API)
+            alert('Paramètres API enregistrés avec succès!');
+        });
+        
+        // Gestionnaire pour le formulaire des préférences générales
+        document.getElementById('general-settings-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            // Récupérer et enregistrer les préférences générales
+            alert('Préférences générales enregistrées avec succès!');
+        });
+        
+        // Gestionnaire pour le formulaire des paramètres de trading
+        document.getElementById('trading-settings-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            // Récupérer et enregistrer les paramètres de trading
+            alert('Paramètres de trading enregistrés avec succès!');
+        });
+        
+        // Gestionnaire pour le formulaire des paramètres de notification
+        document.getElementById('notifications-settings-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            // Récupérer et enregistrer les paramètres de notification
+            alert('Paramètres de notification enregistrés avec succès!');
+        });
+    });
+</script>
+{% endblock %}

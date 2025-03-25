@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}Accueil - Application de Trading{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <h1 class="display-5 mb-4">Application de Trading Modulaire avec Apprentissage Profond</h1>
+                    <p class="lead">Bienvenue dans votre plateforme de trading automatisée pour le marché des crypto-monnaies.</p>
+                    <p>Cette application vous permet de collecter des données de marché, d'exécuter des stratégies de trading, d'utiliser l'apprentissage profond pour prédire les mouvements du marché, et d'évaluer les performances par backtesting.</p>
+                    <div class="mt-4">
+                        <a href="/dashboard" class="btn btn-primary me-2">
+                            <i class="bi bi-speedometer2"></i> Tableau de bord
+                        </a>
+                        <a href="/strategies" class="btn btn-success me-2">
+                            <i class="bi bi-graph-up"></i> Gérer les stratégies
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-graph-up"></i> Stratégies de Trading</h5>
+                </div>
+                <div class="card-body">
+                    <p>Configurez et activez différentes stratégies de trading :</p>
+                    <ul>
+                        <li>Croisement de moyennes mobiles</li>
+                        <li>Indice de force relative (RSI)</li>
+                        <li>Bandes de Bollinger</li>
+                        <li>MACD (Moving Average Convergence Divergence)</li>
+                        <li>Ichimoku Kinko Hyo</li>
+                    </ul>
+                    <a href="/strategies" class="btn btn-outline-primary mt-3">
+                        Gérer les stratégies <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-cpu"></i> Apprentissage Profond</h5>
+                </div>
+                <div class="card-body">
+                    <p>Utilisez des modèles d'apprentissage profond pour prédire les mouvements du marché :</p>
+                    <ul>
+                        <li>Modèles LSTM pour la prédiction de séries temporelles</li>
+                        <li>Modèles hybrides CNN-LSTM</li>
+                        <li>Auto-apprentissage basé sur les performances</li>
+                        <li>Optimisation des hyperparamètres</li>
+                    </ul>
+                    <a href="/ml_models" class="btn btn-outline-primary mt-3">
+                        Gérer les modèles ML <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-clock-history"></i> Backtesting</h5>
+                </div>
+                <div class="card-body">
+                    <p>Évaluez les performances de vos stratégies sur des données historiques :</p>
+                    <ul>
+                        <li>Backtesting sur différentes paires de crypto-monnaies</li>
+                        <li>Métriques de performance détaillées</li>
+                        <li>Optimisation des paramètres de stratégie</li>
+                        <li>Simulation Monte Carlo</li>
+                    </ul>
+                    <a href="/backtesting" class="btn btn-outline-primary mt-3">
+                        Accéder au backtesting <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-speedometer2"></i> Tableau de Bord</h5>
+                </div>
+                <div class="card-body">
+                    <p>Surveillez en temps réel vos stratégies et le marché :</p>
+                    <ul>
+                        <li>Visualisation des prix en temps réel</li>
+                        <li>Suivi des performances des stratégies actives</li>
+                        <li>Indicateurs techniques</li>
+                        <li>État du portefeuille et des ordres</li>
+                    </ul>
+                    <a href="/dashboard" class="btn btn-outline-primary mt-3">
+                        Voir le tableau de bord <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

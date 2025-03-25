@@ -1,0 +1,43 @@
+# Configuration avancée pour le système de trading
+
+# Configuration générale
+general:
+  environment: "paper_trading"  # Options: "paper_trading", "live_trading", "backtesting"
+  base_currency: "USDT"
+  log_level: "INFO"
+  data_dir: "data"
+  results_dir: "results"
+  log_dir: "logs"
+  models_dir: "models"
+
+# Configuration des API
+api:
+  binance:
+    api_key: "${BINANCE_API_KEY}"  # Utilisation de variables d'environnement
+    api_secret: "${BINANCE_API_SECRET}"
+    testnet: true
+  # Autres API pour données on-chain
+  glassnode:
+    api_key: "${GLASSNODE_API_KEY}"
+  cryptoquant:
+    api_key: "${CRYPTOQUANT_API_KEY}"
+
+# Configuration des crypto-monnaies
+crypto_pairs:
+  - symbol: "BTCUSDT"
+    base_asset: "BTC"
+    quote_asset: "USDT"
+    enabled: true
+    max_position_size: 0.05  # 5% du capital
+    risk_multiplier: 1.0
+  - symbol: "ETHUSDT"
+    base_asset: "ETH"
+    quote_asset: "USDT"
+    enabled: true
+    max_position_size: 0.04  # 4% du capital
+    risk_multiplier: 0.9
+  - symbol: "BNBUSDT"
+    base_asset: "BNB"
+    quote_asset: "USDT"
+    enabled: true
+    max_position_size: 0.03  # 3% du capital

@@ -1,0 +1,494 @@
+{% extends "base.html" %}
+
+{% block title %}Tableau de bord - Application de Trading{% endblock %}
+
+{% block extra_css %}
+<style>
+    .market-card {
+        margin-bottom: 20px;
+    }
+    .price-up {
+        color: #28a745;
+    }
+    .price-down {
+        color: #dc3545;
+    }
+    .chart-container {
+        height: 400px;
+        margin-bottom: 20px;
+    }
+    .strategy-badge {
+        margin-right: 5px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <h1 class="h2 mb-4">Tableau de bord</h1>
+
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Aperçu du marché</h5>
+                    <div>
+                        <button id="refresh-market" class="btn btn-sm btn-outline-secondary me-2">
+                            <i class="bi bi-arrow-clockwise"></i> Rafraîchir
+                        </button>
+                        <span id="last-update" class="text-muted small">Dernière mise à jour: jamais</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row" id="market-overview">
+                        <!-- Les cartes de marché seront ajoutées ici dynamiquement -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Graphique</h5>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span id="selected-pair">BTC/USDT</span>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item pair-option" href="#" data-pair="BTCUSDT">BTC/USDT</a></li>
+                            <li><a class="dropdown-item pair-option" href="#" data-pair="ETHUSDT">ETH/USDT</a></li>
+                            <li><a class="dropdown-item pair-option" href="#" data-pair="BNBUSDT">BNB/USDT</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="btn-group mb-3">
+                        <button type="button" class="btn btn-sm btn-outline-secondary interval-option active" data-interval="1h">1h</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary interval-option" data-interval="4h">4h</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary interval-option" data-interval="1d">1j</button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary interval-option" data-interval="1w">1s</button>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="price-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Stratégies actives</h5>
+                </div>
+                <div class="card-body">
+                    <div id="active-strategies">
+                        <div class="list-group">
+                            <!-- Les stratégies actives seront ajoutées ici dynamiquement -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Portefeuille</h5>
+                </div>
+                <div class="card-body">
+                    <div id="portfolio">
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Actif</th>
+                                        <th>Quantité</th>
+                                        <th>Valeur (USDT)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="portfolio-table">
+                                    <!-- Le portefeuille sera ajouté ici dynamiquement -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Derniers ordres</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Paire</th>
+                                    <th>Type</th>
+                                    <th>Côté</th>
+                                    <th>Prix</th>
+                                    <th>Quantité</th>
+                                    <th>Total</th>
+                                    <th>Statut</th>
+                                </tr>
+                            </thead>
+                            <tbody id="orders-table">
+                                <!-- Les ordres seront ajoutés ici dynamiquement -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Fonction pour formater les nombres avec 2 décimales
+    function formatNumber(num, decimals = 2) {
+        return num.toFixed(decimals);
+    }
+    
+    // Fonction pour formater les prix en fonction de la paire
+    function formatPrice(price, pair) {
+        if (pair.endsWith('USDT')) {
+            if (pair === 'BTCUSDT') {
+                return formatNumber(price, 2);
+            } else {
+                return formatNumber(price, 4);
+            }
+        }
+        return formatNumber(price, 8);
+    }
+    
+    // Fonction pour mettre à jour l'aperçu du marché
+    function updateMarketOverview() {
+        const pairs = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT'];
+        const container = document.getElementById('market-overview');
+        container.innerHTML = '';
+        
+        pairs.forEach(pair => {
+            fetch(`/api/market_data?symbol=${pair}&interval=1h&limit=2`)
+                .then(response => response.json())
+                .then(data => {
+                    if (!data || !data.close || data.close.length < 2) {
+                        return;
+                    }
+                    
+                    const currentPrice = parseFloat(data.close[data.close.length - 1]);
+                    const previousPrice = parseFloat(data.close[data.close.length - 2]);
+                    const priceChange = currentPrice - previousPrice;
+                    const priceChangePercent = (priceChange / previousPrice) * 100;
+                    const isPriceUp = priceChange >= 0;
+                    
+                    const displayName = pair.replace('USDT', '/USDT');
+                    const formattedPrice = formatPrice(currentPrice, pair);
+                    const formattedChange = formatNumber(priceChangePercent);
+                    
+                    const card = document.createElement('div');
+                    card.className = 'col-md-4 market-card';
+                    card.innerHTML = `
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">${displayName}</h5>
+                                <h3 class="${isPriceUp ? 'price-up' : 'price-down'}">
+                                    ${formattedPrice} USDT
+                                    <small class="ms-2">
+                                        <i class="bi bi-${isPriceUp ? 'arrow-up' : 'arrow-down'}"></i>
+                                        ${formattedChange}%
+                                    </small>
+                                </h3>
+                                <p class="card-text">Volume: ${formatNumber(data.volume[data.volume.length - 1])}</p>
+                            </div>
+                        </div>
+                    `;
+                    
+                    container.appendChild(card);
+                })
+                .catch(error => console.error(`Erreur lors de la récupération des données pour ${pair}:`, error));
+        });
+        
+        // Mettre à jour l'horodatage de la dernière mise à jour
+        document.getElementById('last-update').textContent = `Dernière mise à jour: ${new Date().toLocaleTimeString()}`;
+    }
+    
+    // Fonction pour mettre à jour le graphique des prix
+    function updatePriceChart(pair, interval) {
+        fetch(`/api/market_data?symbol=${pair}&interval=${interval}&limit=100`)
+            .then(response => response.json())
+            .then(data => {
+                if (!data || !data.timestamp || data.timestamp.length === 0) {
+                    return;
+                }
+                
+                const ctx = document.getElementById('price-chart').getContext('2d');
+                
+                // Détruire le graphique existant s'il y en a un
+                if (window.priceChart) {
+                    window.priceChart.destroy();
+                }
+                
+                // Créer un nouveau graphique
+                window.priceChart = new Chart(ctx, {
+                    type: 'candlestick',
+                    data: {
+                        datasets: [{
+                            label: pair,
+                            data: data.timestamp.map((time, i) => ({
+                                t: new Date(time),
+                                o: parseFloat(data.open[i]),
+                                h: parseFloat(data.high[i]),
+                                l: parseFloat(data.low[i]),
+                                c: parseFloat(data.close[i])
+                            })),
+                            borderColor: '#000',
+                            color: {
+                                up: '#28a745',
+                                down: '#dc3545',
+                                unchanged: '#999'
+                            }
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                type: 'time',
+                                time: {
+                                    unit: interval === '1h' ? 'hour' : interval === '4h' ? 'day' : interval === '1d' ? 'day' : 'week'
+                                }
+                            },
+                            y: {
+                                position: 'right'
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => console.error(`Erreur lors de la récupération des données pour le graphique:`, error));
+    }
+    
+    // Fonction pour mettre à jour les stratégies actives
+    function updateActiveStrategies() {
+        // Dans un environnement réel, cette fonction ferait une requête à l'API
+        // Pour l'exemple, nous utilisons des données fictives
+        const strategies = [
+            {
+                strategy_name: 'moving_average_crossover',
+                description: 'Croisement de moyennes mobiles',
+                crypto_pair: 'BTCUSDT',
+                last_signal: 1,
+                last_run: '2023-06-15 14:30:00'
+            },
+            {
+                strategy_name: 'rsi',
+                description: 'RSI',
+                crypto_pair: 'ETHUSDT',
+                last_signal: -1,
+                last_run: '2023-06-15 14:35:00'
+            },
+            {
+                strategy_name: 'bollinger_bands',
+                description: 'Bandes de Bollinger',
+                crypto_pair: 'BNBUSDT',
+                last_signal: 0,
+                last_run: '2023-06-15 14:40:00'
+            }
+        ];
+        
+        const container = document.querySelector('#active-strategies .list-group');
+        container.innerHTML = '';
+        
+        strategies.forEach(strategy => {
+            let signalBadge = '';
+            if (strategy.last_signal === 1) {
+                signalBadge = '<span class="badge bg-success ms-2">Achat</span>';
+            } else if (strategy.last_signal === -1) {
+                signalBadge = '<span class="badge bg-danger ms-2">Vente</span>';
+            } else {
+                signalBadge = '<span class="badge bg-secondary ms-2">Neutre</span>';
+            }
+            
+            const item = document.createElement('a');
+            item.href = '#';
+            item.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
+            item.innerHTML = `
+                <div>
+                    <h6 class="mb-1">${strategy.description}</h6>
+                    <small class="text-muted">${strategy.crypto_pair}</small>
+                </div>
+                <div>
+                    ${signalBadge}
+                </div>
+            `;
+            
+            container.appendChild(item);
+        });
+    }
+    
+    // Fonction pour mettre à jour le portefeuille
+    function updatePortfolio() {
+        // Dans un environnement réel, cette fonction ferait une requête à l'API
+        // Pour l'exemple, nous utilisons des données fictives
+        fetch('/api/account_info')
+            .then(response => response.json())
+            .then(data => {
+                if (!data || !data.balances) {
+                    return;
+                }
+                
+                const tableBody = document.getElementById('portfolio-table');
+                tableBody.innerHTML = '';
+                
+                // Filtrer les soldes non nuls
+                const balances = data.balances.filter(b => parseFloat(b.free) > 0 || parseFloat(b.locked) > 0);
+                
+                balances.forEach(balance => {
+                    const row = document.createElement('tr');
+                    const asset = balance.asset;
+                    const free = parseFloat(balance.free);
+                    const locked = parseFloat(balance.locked);
+                    const total = free + locked;
+                    
+                    // Pour l'exemple, nous utilisons des prix fictifs
+                    let valueInUSDT = 0;
+                    if (asset === 'USDT') {
+                        valueInUSDT = total;
+                    } else if (asset === 'BTC') {
+                        valueInUSDT = total * 50000; // Prix fictif
+                    } else if (asset === 'ETH') {
+                        valueInUSDT = total * 3000; // Prix fictif
+                    } else {
+                        valueInUSDT = total * 100; // Prix fictif pour les autres actifs
+                    }
+                    
+                    row.innerHTML = `
+                        <td>${asset}</td>
+                        <td>${formatNumber(total, asset === 'BTC' ? 8 : 4)}</td>
+                        <td>${formatNumber(valueInUSDT, 2)}</td>
+                    `;
+                    
+                    tableBody.appendChild(row);
+                });
+            })
+            .catch(error => console.error('Erreur lors de la récupération des informations du compte:', error));
+    }
+    
+    // Fonction pour mettre à jour les derniers ordres
+    function updateOrders() {
+        // Dans un environnement réel, cette fonction ferait une requête à l'API
+        // Pour l'exemple, nous utilisons des données fictives
+        const orders = [
+            {
+                time: '2023-06-15 14:30:00',
+                symbol: 'BTCUSDT',
+                type: 'MARKET',
+                side: 'BUY',
+                price: 50000,
+                quantity: 0.1,
+                total: 5000,
+                status: 'FILLED'
+            },
+            {
+                time: '2023-06-15 13:45:00',
+                symbol: 'ETHUSDT',
+                type: 'LIMIT',
+                side: 'SELL',
+                price: 3000,
+                quantity: 1.5,
+                total: 4500,
+                status: 'FILLED'
+            },
+            {
+                time: '2023-06-15 12:30:00',
+                symbol: 'BNBUSDT',
+                type: 'LIMIT',
+                side: 'BUY',
+                price: 400,
+                quantity: 2.5,
+                total: 1000,
+                status: 'FILLED'
+            }
+        ];
+        
+        const tableBody = document.getElementById('orders-table');
+        tableBody.innerHTML = '';
+        
+        orders.forEach(order => {
+            const row = document.createElement('tr');
+            
+            const statusClass = order.status === 'FILLED' ? 'success' : order.status === 'CANCELED' ? 'danger' : 'warning';
+            const sideClass = order.side === 'BUY' ? 'success' : 'danger';
+            
+            row.innerHTML = `
+                <td>${order.time}</td>
+                <td>${order.symbol}</td>
+                <td>${order.type}</td>
+                <td><span class="badge bg-${sideClass}">${order.side}</span></td>
+                <td>${formatPrice(order.price, order.symbol)}</td>
+                <td>${formatNumber(order.quantity, 8)}</td>
+                <td>${formatNumber(order.total, 2)}</td>
+                <td><span class="badge bg-${statusClass}">${order.status}</span></td>
+            `;
+            
+            tableBody.appendChild(row);
+        });
+    }
+    
+    // Initialisation
+    document.addEventListener('DOMContentLoaded', function() {
+        // Mettre à jour l'aperçu du marché
+        updateMarketOverview();
+        
+        // Mettre à jour le graphique des prix
+        updatePriceChart('BTCUSDT', '1h');
+        
+        // Mettre à jour les stratégies actives
+        updateActiveStrategies();
+        
+        // Mettre à jour le portefeuille
+        updatePortfolio();
+        
+        // Mettre à jour les derniers ordres
+        updateOrders();
+        
+        // Configurer les événements
+        document.getElementById('refresh-market').addEventListener('click', updateMarketOverview);
+        
+        // Changer de paire pour le graphique
+        document.querySelectorAll('.pair-option').forEach(option => {
+            option.addEventListener('click', function(e) {
+                e.preventDefault();
+                const pair = this.dataset.pair;
+                const interval = document.querySelector('.interval-option.active').dataset.interval;
+                document.getElementById('selected-pair').textContent = pair.replace('USDT', '/USDT');
+                updatePriceChart(pair, interval);
+            });
+        });
+        
+        // Changer d'intervalle pour le graphique
+        document.querySelectorAll('.interval-option').forEach(option => {
+            option.addEventListener('click', function() {
+                document.querySelectorAll('.interval-option').forEach(opt => opt.classList.remove('active'));
+                this.classList.add('active');
+                const interval = this.dataset.interval;
+                const pair = document.getElementById('selected-pair').textContent.replace('/', '');
+                updatePriceChart(pair, interval);
+            });
+        });
+        
+        // Rafraîchir les données toutes les 60 secondes
+        setInterval(updateMarketOverview, 60000);
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,321 @@
+{% extends "base.html" %}
+
+{% block title %}Stratégies - Application de Trading{% endblock %}
+
+{% block extra_css %}
+<style>
+    .strategy-card {
+        margin-bottom: 20px;
+    }
+    .strategy-params {
+        margin-top: 15px;
+    }
+    .param-row {
+        margin-bottom: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <h1 class="h2 mb-4">Gestion des stratégies</h1>
+
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Stratégies actives</h5>
+                    <button id="refresh-strategies" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-arrow-clockwise"></i> Rafraîchir
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div id="active-strategies-container" class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Stratégie</th>
+                                    <th>Paire</th>
+                                    <th>Paramètres</th>
+                                    <th>Dernière exécution</th>
+                                    <th>Dernier signal</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="active-strategies-table">
+                                <tr>
+                                    <td colspan="6" class="text-center">Aucune stratégie active</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Ajouter une stratégie</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label for="strategy-select" class="form-label">Stratégie</label>
+                            <select id="strategy-select" class="form-select">
+                                <option value="" selected disabled>Sélectionner une stratégie</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="crypto-pair-select" class="form-label">Paire de crypto-monnaies</label>
+                            <select id="crypto-pair-select" class="form-select">
+                                <option value="BTCUSDT">BTC/USDT</option>
+                                <option value="ETHUSDT">ETH/USDT</option>
+                                <option value="BNBUSDT">BNB/USDT</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3 d-flex align-items-end">
+                            <button id="add-strategy-btn" class="btn btn-primary w-100" disabled>
+                                <i class="bi bi-plus-circle"></i> Ajouter la stratégie
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="strategy-cards-container" class="row mt-4">
+        <!-- Les cartes de stratégies seront ajoutées ici dynamiquement -->
+    </div>
+</div>
+
+<!-- Modal de confirmation de désactivation -->
+<div class="modal fade" id="deactivate-modal" tabindex="-1" aria-labelledby="deactivate-modal-label" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deactivate-modal-label">Confirmer la désactivation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Êtes-vous sûr de vouloir désactiver cette stratégie ?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-danger" id="confirm-deactivate-btn">Désactiver</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Stratégie à désactiver
+    let strategyToDeactivate = null;
+    
+    // Fonction pour charger les stratégies disponibles
+    function loadAvailableStrategies() {
+        fetch('/api/strategies')
+            .then(response => response.json())
+            .then(strategies => {
+                const strategySelect = document.getElementById('strategy-select');
+                
+                // Vider le select sauf l'option par défaut
+                while (strategySelect.options.length > 1) {
+                    strategySelect.remove(1);
+                }
+                
+                // Ajouter les stratégies disponibles
+                strategies.forEach(strategy => {
+                    const option = document.createElement('option');
+                    option.value = strategy.name;
+                    option.textContent = strategy.description;
+                    option.dataset.strategy = JSON.stringify(strategy);
+                    strategySelect.appendChild(option);
+                });
+                
+                // Activer le bouton si une stratégie est sélectionnée
+                strategySelect.addEventListener('change', function() {
+                    const addButton = document.getElementById('add-strategy-btn');
+                    addButton.disabled = !this.value;
+                    
+                    if (this.value) {
+                        const selectedOption = this.options[this.selectedIndex];
+                        const strategy = JSON.parse(selectedOption.dataset.strategy);
+                        createStrategyCard(strategy);
+                    } else {
+                        document.getElementById('strategy-cards-container').innerHTML = '';
+                    }
+                });
+            })
+            .catch(error => console.error('Erreur lors du chargement des stratégies:', error));
+    }
+    
+    // Fonction pour créer une carte de stratégie avec ses paramètres
+    function createStrategyCard(strategy) {
+        const container = document.getElementById('strategy-cards-container');
+        container.innerHTML = '';
+        
+        const card = document.createElement('div');
+        card.className = 'col-md-6 strategy-card';
+        card.innerHTML = `
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">${strategy.description}</h5>
+                </div>
+                <div class="card-body">
+                    <p>${strategy.description}</p>
+                    <div class="strategy-params">
+                        <h6>Paramètres</h6>
+                        <form id="strategy-params-form">
+                            ${Object.entries(strategy.parameters).map(([key, param]) => `
+                                <div class="param-row row">
+                                    <div class="col-md-4">
+                                        <label for="param-${key}" class="form-label">${key}</label>
+                                    </div>
+                                    <div class="col-md-8">
+                                        ${createParamInput(key, param)}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </form>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        container.appendChild(card);
+    }
+    
+    // Fonction pour créer un input en fonction du type de paramètre
+    function createParamInput(key, param) {
+        if (param.type === 'int' || param.type === 'float') {
+            return `
+                <input type="number" id="param-${key}" class="form-control" 
+                       value="${param.default}" 
+                       min="${param.min}" 
+                       max="${param.max}" 
+                       step="${param.type === 'int' ? 1 : 0.1}">
+            `;
+        } else if (param.type === 'bool') {
+            return `
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="param-${key}" ${param.default ? 'checked' : ''}>
+                </div>
+            `;
+        } else {
+            return `
+                <input type="text" id="param-${key}" class="form-control" value="${param.default}">
+            `;
+        }
+    }
+    
+    // Fonction pour activer une stratégie
+    function activateStrategy() {
+        const strategySelect = document.getElementById('strategy-select');
+        const cryptoPairSelect = document.getElementById('crypto-pair-select');
+        
+        if (!strategySelect.value) {
+            alert('Veuillez sélectionner une stratégie');
+            return;
+        }
+        
+        const selectedOption = strategySelect.options[strategySelect.selectedIndex];
+        const strategy = JSON.parse(selectedOption.dataset.strategy);
+        const cryptoPair = cryptoPairSelect.value;
+        
+        // Récupérer les valeurs des paramètres
+        const parameters = {};
+        Object.keys(strategy.parameters).forEach(key => {
+            const input = document.getElementById(`param-${key}`);
+            if (input.type === 'checkbox') {
+                parameters[key] = input.checked;
+            } else if (input.type === 'number') {
+                parameters[key] = strategy.parameters[key].type === 'int' ? parseInt(input.value) : parseFloat(input.value);
+            } else {
+                parameters[key] = input.value;
+            }
+        });
+        
+        // Envoyer la requête d'activation
+        fetch('/api/activate_strategy', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                strategy_name: strategy.name,
+                crypto_pair: cryptoPair,
+                parameters: parameters
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`Stratégie ${strategy.description} activée pour ${cryptoPair}`);
+                loadActiveStrategies();
+            } else {
+                alert('Erreur lors de l\'activation de la stratégie');
+            }
+        })
+        .catch(error => console.error('Erreur lors de l\'activation de la stratégie:', error));
+    }
+    
+    // Fonction pour charger les stratégies actives
+    function loadActiveStrategies() {
+        // Dans un environnement réel, cette fonction ferait une requête à l'API
+        // Pour l'exemple, nous utilisons des données fictives
+        const activeStrategies = [
+            {
+                strategy_name: 'moving_average_crossover',
+                description: 'Stratégie de croisement de moyennes mobiles',
+                crypto_pair: 'BTCUSDT',
+                parameters: {
+                    short_window: 50,
+                    long_window: 200
+                },
+                last_run: '2023-06-15 14:30:00',
+                last_signal: 1
+            },
+            {
+                strategy_name: 'rsi',
+                description: 'Stratégie basée sur l\'indice de force relative (RSI)',
+                crypto_pair: 'ETHUSDT',
+                parameters: {
+                    period: 14,
+                    oversold: 30,
+                    overbought: 70
+                },
+                last_run: '2023-06-15 14:35:00',
+                last_signal: -1
+            }
+        ];
+        
+        const tableBody = document.getElementById('active-strategies-table');
+        tableBody.innerHTML = '';
+        
+        if (activeStrategies.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="6" class="text-center">Aucune stratégie active</td></tr>';
+            return;
+        }
+        
+        activeStrategies.forEach(strategy => {
+            const row = document.createElement('tr');
+            
+            // Formater les paramètres
+            const paramsFormatted = Object.entries(strategy.parameters)
+                .map(([key, value]) => `${key}: ${value}`)
+                .join('<br>');
+            
+            // Formater le signal
+            let signalFormatted = '';
+            if (strategy.last_signal === 1) {
+                signalFormatted = '<span class="badge bg-success">Achat</span>';
+            } else if (strategy.last_signal === -1) {
+                signalFormatted = '<span class="badge bg-danger">Vente</span>';
+            } else {
+                signalFormat
